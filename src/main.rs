@@ -29,24 +29,3 @@ impl Default for Testemu {
         Self { height: 32, width: 64, count: 0, screen: vec![false; 32 * 64] }
     }
 }
-
-impl Emulator for Testemu {
-    fn retrieve_screen_pixels(&self) -> &[bool] {
-        self.screen.as_slice()
-    }
-
-    fn retrieve_screen_size(&self) -> (usize, usize) {
-        (self.width, self.height)
-    }
-
-    fn update(&mut self) {
-        let new_val = !self.screen.as_slice()[self.count];
-        self.screen[self.count] = new_val;
-        self.count = self.count + 1;
-        if self.count >= self.height * self.width { self.count = 0 }
-    }
-
-    fn get_name(&self) -> &str {
-        "Screen Test"
-    }
-}
