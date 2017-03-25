@@ -1,5 +1,3 @@
-use std::slice::Iter;
-
 const MEM_SIZE: usize = 4096;
 
 pub struct Memory {

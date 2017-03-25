@@ -40,14 +40,14 @@ impl Registers {
         assert!(self.is_register_valid(register));
         let lsb = self.data_registers[register as usize] & 0b00000001;
         self.data_registers[0xF] = lsb;
-        self.data_registers[register as usize] = self.data_registers[register as usize] >> 1;
+        self.data_registers[register as usize] >>= 1;
     }
 
     pub fn shift_left_and_set_vf_to_msb(&mut self, register: u8) {
         assert!(self.is_register_valid(register));
         let msb = self.data_registers[register as usize] & 0b10000000;
         self.data_registers[0xF] = msb;
-        self.data_registers[register as usize] = self.data_registers[register as usize] << 1;
+        self.data_registers[register as usize] <<= 1;
     }
 
     pub fn reset_vf_to_zero(&mut self) {

@@ -46,11 +46,11 @@ impl Default for Chip8 {
 
 impl Emulator for Chip8 {
     fn retrieve_screen_pixels(&self) -> &[bool] {
-        return self.screen.retrieve_state()
+        self.screen.retrieve_state()
     }
 
     fn retrieve_screen_size(&self) -> (usize, usize) {
-        return self.screen.get_dimensions()
+        self.screen.get_dimensions()
     }
 
     fn update(&mut self) {
@@ -132,10 +132,10 @@ impl Chip8 {
         self.memory.set_value_to_address(0x00, 0x203); //0x202: 0x6100 set register V1 to 0
         self.memory.set_value_to_address(0xA3, 0x204);
         self.memory.set_value_to_address(0x00, 0x205); //0x204: 0xA300 set address register to 0x300
-        self.memory.set_value_to_address(0xD0, 0x206);
-        self.memory.set_value_to_address(0x18, 0x207); //0x206: 0xD018 draw sprite from address register to X=V0, Y=V1 with size 8
-        self.memory.set_value_to_address(0x62, 0x208);
-        self.memory.set_value_to_address(0x08, 0x209); //0x208: 0x6210 set register V1 to 16
+        self.memory.set_value_to_address(0x62, 0x206);
+        self.memory.set_value_to_address(0x08, 0x207); //0x208: 0x6210 set register V2 to 8
+        self.memory.set_value_to_address(0xD0, 0x208);
+        self.memory.set_value_to_address(0x18, 0x209); //0x206: 0xD018 draw sprite from address register to X=V0, Y=V1 with size 8
         self.memory.set_value_to_address(0xA3, 0x20A);
         self.memory.set_value_to_address(0x10, 0x20B); //0x20A: 0xA310 set address register to 0x310
         self.memory.set_value_to_address(0xD2, 0x20C);

@@ -11,17 +11,21 @@ use self::opengl_graphics::{GlGraphics, OpenGL};
 
 use emulator::Emulator;
 
+const UPDATE_LIMIT: f64 = 1.0 / 60.0;
+
+
 pub struct App {
     gl: GlGraphics,
     window: Window,
-    emulator: Box<Emulator>
+    emulator: Box<Emulator>,
+    update_time: f64,
 }
 
 impl App {
-    pub fn new(mut selected_emulator: Box<Emulator>) -> App {
+    pub fn new(selected_emulator: Box<Emulator>) -> App {
         let opengl = OpenGL::V3_2;
 
-        let mut window_gl: Window = WindowSettings::new(
+        let window_gl: Window = WindowSettings::new(
             selected_emulator.get_name(),
             [200, 200]
         )
@@ -33,7 +37,8 @@ impl App {
         App {
             gl: GlGraphics::new(opengl),
             window: window_gl,
-            emulator: selected_emulator
+            emulator: selected_emulator,
+            update_time: 0.0,
         }
     }
 
@@ -55,19 +60,14 @@ impl App {
 
         let (screen_width, screen_height) = self.emulator.retrieve_screen_size();
         let (pixel_width, pixel_height) = ((args.width / screen_width as u32) as u32, (args.height / screen_height as u32) as u32);
-
         let center_width: f64 = ((args.width - ((screen_width as u32) * pixel_width)) / 2) as f64;
         let center_height: f64 = ((args.height - ((screen_height as u32) * pixel_height)) / 2) as f64;
 
         let pixel = rectangle::rectangle_by_corners(0.0, 0.0, pixel_width as f64, pixel_height as f64);
         let iterator = self.emulator.retrieve_screen_pixels().into_iter();
         self.gl.draw(args.viewport(), |c, gl| {
-            // Clear the screen.
-            clear(color::hex("888888"), gl);
 
-            let mut pos_x: f64;
-            let mut pos_y: f64;
-            let mut transform: math::Matrix2d;
+            clear(color::hex("888888"), gl);
 
             for (index, value) in iterator.enumerate() {
                 let draw_color = if *value { color::WHITE } else { color::BLACK };
@@ -82,6 +82,11 @@ impl App {
     }
 
     fn update(&mut self, args: &UpdateArgs) {
-        self.emulator.update();
+        self.update_time += args.dt;
+        if self.update_time > UPDATE_LIMIT {
+            self.emulator.update();
+            self.update_time -= UPDATE_LIMIT;
+        }
+
     }
 }

@@ -2,7 +2,7 @@ const SCREEN_HEIGHT: usize = 32;
 const SCREEN_WIDTH: usize = 64;
 const SCREEN_PIXELS: usize = SCREEN_HEIGHT * SCREEN_WIDTH;
 
-const SPRITE_WIDTH: u8 = 8;
+const SPRITE_WIDTH: usize = 8;
 
 pub struct Screen {
     screen: Vec<bool>,
@@ -32,14 +32,11 @@ impl Screen {
     }
 
     pub fn draw(&mut self, pos_x: u8, pos_y: u8, sprite: &[u8]) {
-        let mut pos = self.translate_coordinate(pos_x, pos_y);
         for (row_index, sprite_row) in sprite.into_iter().enumerate() {
-            let mut mask: u8 = 0b00000001;
-            let mut pos = self.translate_coordinate(pos_x, pos_y + (row_index as u8));
-            for i in 0..8 {
-                self.screen[pos] = (sprite_row & mask) > 0;
-                mask = mask << 1;
-                pos += 1;
+            let mask: u8 = 0b00000001;
+            let pos = self.translate_coordinate(pos_x, pos_y + (row_index as u8));
+            for i in 0..SPRITE_WIDTH {
+                self.screen[pos + i] = (sprite_row & mask << i) > 0;
             }
         }
     }
