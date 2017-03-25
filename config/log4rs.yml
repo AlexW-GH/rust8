@@ -8,7 +8,7 @@ appenders:
 
   file:
     kind: file
-    path: "log/requests.log"
+    path: "log/rust8.log"
     encoder:
       pattern: "{d} - {l}: {m}{n}"
 

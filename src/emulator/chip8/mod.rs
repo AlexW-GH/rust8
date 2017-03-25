@@ -55,7 +55,6 @@ impl Emulator for Chip8 {
 
     fn update(&mut self) {
         let opcode = retrieve_op(&self.memory, self.pc);
-        debug!("pc: 0x{:X} -> opcode: {}", self.pc, opcode);
         self.pc += 2;
         self.execute_op(opcode);
     }
@@ -71,6 +70,7 @@ impl Chip8 {
     }
 
     fn execute_op(&mut self, opcode: Opcode) {
+        debug!("pc: 0x{:X} -> opcode: {}", self.pc, opcode);
         let optuple = opcode.as_tuple();
         match optuple.0 {
             0x0 => self.handle_0x0_operations(opcode),
@@ -222,41 +222,43 @@ impl Chip8 {
         }
     }
 
-    pub fn test_setup(&mut self) {
+    pub fn setup_blink_hi(&mut self) {
+        info!("Initialize Program: \"Blink Hi\"");
+        self.title = "Blink Hi".to_string();
         self.memory.set_value_to_address(0x60, 0x200);
         self.memory.set_value_to_address(0x00, 0x201); //0x200: 0x6000 set register V0 to 0
         self.memory.set_value_to_address(0x61, 0x202);
         self.memory.set_value_to_address(0x00, 0x203); //0x202: 0x6100 set register V1 to 0
-        self.memory.set_value_to_address(0xA3, 0x204);
-        self.memory.set_value_to_address(0x00, 0x205); //0x204: 0xA300 set address register to 0x300
+        self.memory.set_value_to_address(0xA2, 0x204);
+        self.memory.set_value_to_address(0x10, 0x205); //0x204: 0xA210 set address register to 0x210
         self.memory.set_value_to_address(0x62, 0x206);
         self.memory.set_value_to_address(0x08, 0x207); //0x208: 0x6210 set register V2 to 8
         self.memory.set_value_to_address(0xD0, 0x208);
         self.memory.set_value_to_address(0x18, 0x209); //0x206: 0xD018 draw sprite from address register to X=V0, Y=V1 with size 8
-        self.memory.set_value_to_address(0xA3, 0x20A);
-        self.memory.set_value_to_address(0x10, 0x20B); //0x20A: 0xA310 set address register to 0x310
+        self.memory.set_value_to_address(0xA2, 0x20A);
+        self.memory.set_value_to_address(0x18, 0x20B); //0x20A: 0xA218 set address register to 0x218
         self.memory.set_value_to_address(0xD2, 0x20C);
         self.memory.set_value_to_address(0x18, 0x20D); //0x20C: 0xD028 draw sprite from address register to X=V2, Y=V1 with size 8
         self.memory.set_value_to_address(0x12, 0x20E);
         self.memory.set_value_to_address(0x00, 0x20F); //0x210: 0x1200 jump to 0x200
 
-        self.memory.set_value_to_address(0b11000011, 0x300); //0x300-0x307 = Sprite "H"
-        self.memory.set_value_to_address(0b11000011, 0x301);
-        self.memory.set_value_to_address(0b11000011, 0x302);
-        self.memory.set_value_to_address(0b11111111, 0x303);
-        self.memory.set_value_to_address(0b11111111, 0x304);
-        self.memory.set_value_to_address(0b11000011, 0x305);
-        self.memory.set_value_to_address(0b11000011, 0x306);
-        self.memory.set_value_to_address(0b11000011, 0x307);
+        self.memory.set_value_to_address(0b11000011, 0x210); //0x210-0x217 = Sprite "H"
+        self.memory.set_value_to_address(0b11000011, 0x211);
+        self.memory.set_value_to_address(0b11000011, 0x212);
+        self.memory.set_value_to_address(0b11111111, 0x213);
+        self.memory.set_value_to_address(0b11111111, 0x214);
+        self.memory.set_value_to_address(0b11000011, 0x215);
+        self.memory.set_value_to_address(0b11000011, 0x216);
+        self.memory.set_value_to_address(0b11000011, 0x217);
 
-        self.memory.set_value_to_address(0b00011000, 0x310); //0x310-0x317 = Sprite "i"
-        self.memory.set_value_to_address(0b00011000, 0x311);
-        self.memory.set_value_to_address(0b00000000, 0x312);
-        self.memory.set_value_to_address(0b00011000, 0x313);
-        self.memory.set_value_to_address(0b00011000, 0x314);
-        self.memory.set_value_to_address(0b00011000, 0x315);
-        self.memory.set_value_to_address(0b00011000, 0x316);
-        self.memory.set_value_to_address(0b00011000, 0x317);
+        self.memory.set_value_to_address(0b00011000, 0x218); //0x218-0x21F = Sprite "i"
+        self.memory.set_value_to_address(0b00011000, 0x219);
+        self.memory.set_value_to_address(0b00000000, 0x21A);
+        self.memory.set_value_to_address(0b00011000, 0x21B);
+        self.memory.set_value_to_address(0b00011000, 0x21C);
+        self.memory.set_value_to_address(0b00011000, 0x21D);
+        self.memory.set_value_to_address(0b00011000, 0x21E);
+        self.memory.set_value_to_address(0b00011000, 0x21F);
     }
 
     fn jump_to_v0_plus_value(&mut self, value: u16) {
