@@ -1,5 +1,7 @@
 const REGISTER_COUNT: usize = 16;
 
+use ::emulator::chip8::component::memory::Memory;
+
 #[derive(Default)]
 pub struct Registers {
     data_registers: [u8; REGISTER_COUNT],
@@ -17,7 +19,7 @@ impl Registers {
         self.data_registers[dest as usize] = value;
     }
 
-    pub fn get_data_register_value(&mut self, register: u8) -> u8 {
+    pub fn get_data_register_value(&self, register: u8) -> u8 {
         assert!(self.is_register_valid(register));
         self.data_registers[register as usize]
     }
@@ -27,6 +29,11 @@ impl Registers {
         let result = self.data_registers[addend1 as usize].overflowing_add(self.data_registers[addend2 as usize]);
         self.data_registers[dest as usize] = result.0;
         result.1
+    }
+
+    pub fn add_data_register_with_value(&mut self, register: u8, value: u8) {
+        assert!(self.is_register_valid(register));
+        self.data_registers[register as usize] += value;
     }
 
     pub fn sub_data_register_with_register(&mut self, dest: u8, minuend: u8, subtrahend: u8) -> bool {
@@ -54,10 +61,6 @@ impl Registers {
         self.data_registers[0xF] = 0;
     }
 
-    pub fn is_register_valid(&self, register: u8) -> bool {
-        register < REGISTER_COUNT as u8
-    }
-
     pub fn get_address_register_value(&self) -> u16 {
         self.address_register
     }
@@ -65,4 +68,39 @@ impl Registers {
     pub fn set_address_register_value(&mut self, value: u16) {
         self.address_register = value;
     }
+
+    pub fn add_address_register_with_register(&mut self, register: u8) {
+        assert!(self.is_register_valid(register));
+        self.address_register += self.data_registers[register as usize] as u16;
+    }
+
+    pub fn set_address_register_to_sprite_from_register(&mut self, register: u8) {
+        error!("set_address_register_to_sprite_from_register not yet implemented!")
+        //TODO: implement me!
+    }
+
+    pub fn get_data_registers(&self, start: u8, end: u8) -> &[u8] {
+        self.data_registers[start as usize..(end + 1) as usize].into_iter().as_slice()
+    }
+
+    pub fn store_until_register(&mut self, register: u8, address: u16, memory: &Memory) {
+        for i in 0..register + 1 {
+            self.data_registers[i as usize] = memory.retrieve_value_from_address(address as u16 + i as u16);
+        }
+    }
+
+    pub fn is_equal_to_value(&self, register: u8, value: u8) -> bool {
+        assert!(self.is_register_valid(register));
+        self.data_registers[register as usize] == value
+    }
+
+    pub fn is_equal_to_register(&self, register1: u8, register2: u8) -> bool {
+        assert!(self.is_register_valid(register1) && self.is_register_valid(register2));
+        self.data_registers[register1 as usize] == self.data_registers[register2 as usize]
+    }
+
+    fn is_register_valid(&self, register: u8) -> bool {
+        register < REGISTER_COUNT as u8
+    }
+
 }

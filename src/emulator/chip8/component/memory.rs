@@ -22,5 +22,16 @@ impl Memory {
     pub fn set_value_to_address(&mut self, value: u8, address: u16) {
         self.memory[address as usize] = value;
     }
+
+    pub fn store_binary_representation_from_register(&mut self, value: u8, address: u16) {
+        error!("store_binary_representation_from_register not yet implemented!")
+        //TODO: implement me!
+    }
+
+    pub fn store_until_register(&mut self, registers: &[u8], address: u16) {
+        for (i, register) in registers.into_iter().enumerate() {
+            self.memory[(address as u8 + i as u8) as usize] = *register;
+        }
+    }
 }
 
