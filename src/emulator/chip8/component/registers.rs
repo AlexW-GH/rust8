@@ -1,5 +1,6 @@
 const REGISTER_COUNT: usize = 16;
 
+use ::emulator::chip8::component::memory;
 use ::emulator::chip8::component::memory::Memory;
 
 #[derive(Default)]
@@ -33,7 +34,8 @@ impl Registers {
 
     pub fn add_data_register_with_value(&mut self, register: u8, value: u8) {
         assert!(self.is_register_valid(register));
-        self.data_registers[register as usize] += value;
+        let result = self.data_registers[register as usize].overflowing_add(value);
+        self.data_registers[register as usize] = result.0;
     }
 
     pub fn sub_data_register_with_register(&mut self, dest: u8, minuend: u8, subtrahend: u8) -> bool {
@@ -75,8 +77,8 @@ impl Registers {
     }
 
     pub fn set_address_register_to_sprite_from_register(&mut self, register: u8) {
-        error!("set_address_register_to_sprite_from_register not yet implemented!")
-        //TODO: implement me!
+        let char = self.get_data_register_value(register) as u16;
+        self.address_register = memory::FONT_ADDRESS + (5 * char);
     }
 
     pub fn get_data_registers(&self, start: u8, end: u8) -> &[u8] {
@@ -104,3 +106,12 @@ impl Registers {
     }
 
 }
+
+/*
+0x6E05 VE = 05
+0x6500 V5 = 00
+0x6B06 Sprite Y Pos @ 06
+0x6A00 Sprite X Pos @ 00
+0xA30C Sprite @ 30C
+0xDAB1 draw
+*/

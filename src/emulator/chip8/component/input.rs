@@ -1,6 +1,6 @@
 #[derive(Default)]
 pub struct Input {
-    pressed_keys: [bool; 0xF],
+    pressed_keys: [bool; 16],
 }
 
 impl Input {

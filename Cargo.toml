@@ -7,6 +7,8 @@ authors = ["alex <wendt.alexander@googlemail.com>"]
 log = "0.3.7"
 log4rs = "0.6.2"
 
+rand = "0.3"
+
 piston = "0.31.1"
 piston2d-graphics = "0.21.1"
 pistoncore-glutin_window = "0.35.0"

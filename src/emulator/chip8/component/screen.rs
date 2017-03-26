@@ -34,11 +34,14 @@ impl Screen {
     pub fn draw(&mut self, pos_x: u8, pos_y: u8, sprite: &[u8]) -> bool {
         let mut pixel_flipped: bool = false;
         for (row_index, sprite_row) in sprite.into_iter().enumerate() {
+            debug!("COL: X: {}, Y: {} -> sprite_Y {:X}", pos_x, pos_y, row_index);
             let mask: u8 = 0b00000001;
             let pos = self.translate_coordinate(pos_x, pos_y + (row_index as u8));
             for i in 0..SPRITE_WIDTH {
+                debug!("ROW: X: {}, Y: {} -> sprite_X {:X}", pos_x, pos_y, i);
                 if (sprite_row & mask << i) > 0 {
-                    let cur_pos = pos + i;
+                    let cur_pos = (pos + i);
+                    debug!("PIX: X: {}, Y: {} -> {}", pos_x, pos_y, cur_pos);
                     if self.screen[cur_pos] { pixel_flipped = true }
                     self.screen[cur_pos] = !self.screen[cur_pos]
                 }

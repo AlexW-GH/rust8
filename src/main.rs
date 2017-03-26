@@ -3,6 +3,7 @@ mod emulator;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
+extern crate rand;
 
 use log::LogLevelFilter;
 use log4rs::append::console::ConsoleAppender;

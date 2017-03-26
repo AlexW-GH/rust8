@@ -2,17 +2,40 @@ mod component;
 
 use std::string::String;
 use std::vec::Vec;
+use rand::Rng;
+use rand::StdRng;
 
 use self::component::timer::Timer;
 use self::component::input::Input;
 use self::component::screen::Screen;
 use self::component::registers::Registers;
+use self::component::memory;
 use self::component::memory::Memory;
 use self::component::opcode::Opcode;
 use emulator::Emulator;
 
+const FONTSET: [u8; 80] = [
+    0xf0, 0x90, 0x90, 0x90, 0xf0, // 0
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xf0, 0x10, 0xf0, 0x80, 0xf0, // 2
+    0xf0, 0x10, 0xf0, 0x10, 0xf0, // 3
+    0x90, 0x90, 0xf0, 0x10, 0x10, // 4
+    0xf0, 0x80, 0xf0, 0x10, 0xf0, // 5
+    0xf0, 0x80, 0xf0, 0x90, 0xf0, // 6
+    0xf0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xf0, 0x90, 0xf0, 0x90, 0xf0, // 8
+    0xf0, 0x90, 0xf0, 0x10, 0xf0, // 9
+    0xf0, 0x90, 0xf0, 0x90, 0x90, // A
+    0xe0, 0x90, 0xe0, 0x90, 0xe0, // B
+    0xf0, 0x80, 0x80, 0x80, 0xf0, // C
+    0xe0, 0x90, 0x90, 0x90, 0xe0, // D
+    0xf0, 0x80, 0xf0, 0x80, 0xf0, // E
+    0xf0, 0x80, 0xf0, 0x80, 0x80, // F
+];
+
 pub struct Chip8 {
     memory: Memory,
+    stack: Vec<u16>,
     registers: Registers,
     delay_timer: Timer,
     sound_timer: Timer,
@@ -20,7 +43,7 @@ pub struct Chip8 {
     screen: Screen,
     pc: u16,
     title: String,
-    subroutine_callback: u16,
+    rng: StdRng,
 }
 
 fn retrieve_op(memory: &Memory, address: u16) -> Opcode {
@@ -32,15 +55,16 @@ impl Default for Chip8 {
     fn default() -> Chip8 {
         log_logo();
         Chip8 {
-            pc: 0x200,
+            pc: memory::PROGRAM_ADDRESS,
             screen: Default::default(),
             input: Default::default(),
             sound_timer: Default::default(),
             delay_timer: Default::default(),
             registers: Default::default(),
             memory: Default::default(),
+            stack: Vec::new(),
             title: String::from("Chip 8"),
-            subroutine_callback: 0,
+            rng: StdRng::new().unwrap(),
         }
     }
 }
@@ -55,6 +79,8 @@ impl Emulator for Chip8 {
     }
 
     fn update(&mut self) {
+        self.delay_timer.tick_down();
+        self.sound_timer.tick_down();
         let opcode = retrieve_op(&self.memory, self.pc);
         self.pc += 2;
         self.execute_op(opcode);
@@ -65,7 +91,14 @@ impl Emulator for Chip8 {
     }
 
     fn load(&mut self, game_data: Vec<u8>) {
-        self.memory.store_all_to_address(game_data.as_slice(), 0x200);
+        self.memory.store_all_to_address(game_data.as_slice(), memory::PROGRAM_ADDRESS);
+        self.memory.store_all_to_address(&FONTSET, memory::FONT_ADDRESS);
+        let mut i = 0;
+        debug!("Gamedata:");
+        while i < game_data.len() {
+            debug!("0x{:X}: 0x{:02X}{:02X}", i + memory::PROGRAM_ADDRESS as usize, game_data[i], game_data[i + 1]);
+            i += 2;
+        }
     }
 }
 
@@ -241,7 +274,8 @@ impl Chip8 {
     }
 
     fn return_from_subroutine(&mut self) {
-        self.pc = self.subroutine_callback;
+        self.pc = self.stack.pop().unwrap();
+        debug!("Returning to {:X} from Subroutine", self.pc);
     }
 
     fn jump_to_address(&mut self, to_address: u16) {
@@ -249,7 +283,8 @@ impl Chip8 {
     }
 
     fn call_subroutine(&mut self, to_address: u16) {
-        self.subroutine_callback = self.pc;
+        debug!("Initiate subroutine at {:X}, jumping from {:X}", to_address, self.pc);
+        self.stack.push(self.pc);
         self.pc = to_address;
     }
 
@@ -258,7 +293,7 @@ impl Chip8 {
     }
 
     fn set_data_register_to_random(&mut self, register: u8, value: u8) {
-        let random = 0xFF & value; //TODO: Implement random numbers
+        let random = (self.rng.next_u32() as u8) & value;
         self.registers.set_data_register_by_value(register, random)
     }
 
@@ -282,4 +317,12 @@ fn log_logo() {
     info!("|_____|_A_|_Rust_|_CHIP8_|_Emulator_|_____|______|______|______|______|______|______|______|");
     info!("|_____|___|______|_______|__________|_____|______|______|______|______|______|______|______|");
 }
+
+/*
+opcode: 0x7A04
+0x3A40
+0x1208
+0xA30C
+0xDAB1
+*/
 

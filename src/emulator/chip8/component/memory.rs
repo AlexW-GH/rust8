@@ -1,4 +1,6 @@
 const MEM_SIZE: usize = 4096;
+pub const FONT_ADDRESS: u16 = 0x100;
+pub const PROGRAM_ADDRESS: u16 = 0x200;
 
 pub struct Memory {
     memory: [u8; MEM_SIZE]
@@ -20,8 +22,9 @@ impl Memory {
     }
 
     pub fn store_binary_representation_from_register(&mut self, value: u8, address: u16) {
-        error!("store_binary_representation_from_register not yet implemented!")
-        //TODO: implement me!
+        self.memory[address as usize] = value / 100;
+        self.memory[(address + 1) as usize] = (value / 10) % 10;
+        self.memory[(address + 2) as usize] = value % 10;
     }
 
     pub fn store_until_register(&mut self, registers: &[u8], address: u16) {
