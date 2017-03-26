@@ -8,15 +8,18 @@ use log::LogLevelFilter;
 use log4rs::append::console::ConsoleAppender;
 use log4rs::append::file::FileAppender;
 use log4rs::encode::pattern::PatternEncoder;
-use log4rs::config::{Appender, Config, Logger, Root};
+use log4rs::config::{Appender, Config, Root};
 
+use emulator::Emulator;
 use self::emulator::chip8::Chip8;
 use self::emulator::window::App;
+use self::emulator::romloader;
 
 fn main() {
     configure_logger("config/log4rs.yml".to_string());
     let mut emulator: Box<Chip8> = Box::new(Chip8::new());
-    emulator.setup_blink_hi();
+    let game = romloader::load_rom("games/game.c8");
+    emulator.load(game);
     let mut app: App = App::new(emulator);
     app.run();
 }
@@ -36,6 +39,6 @@ fn configure_logger(file: String) {
             .build(Root::builder().appender("stdout").appender("file").build(LogLevelFilter::Info))
             .unwrap();
 
-        log4rs::init_config(config);
+        let _ = log4rs::init_config(config);
     });
 }
