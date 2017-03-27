@@ -18,3 +18,22 @@ impl Timer {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Timer;
+
+    #[test]
+    fn tick_down_success() {
+        let mut under_test: Timer = Timer { clock: 5 };
+        under_test.tick_down();
+        assert!(under_test.get_value() == 4);
+    }
+
+    #[test]
+    fn tick_down_no_tick_at_zero() {
+        let mut under_test: Timer = Timer { clock: 0 };
+        under_test.tick_down();
+        assert!(under_test.get_value() == 0);
+    }
+}
