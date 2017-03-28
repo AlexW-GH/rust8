@@ -1,4 +1,4 @@
-pub mod window;
+pub mod io;
 pub mod chip8;
 pub mod romloader;
 
@@ -8,4 +8,6 @@ pub trait Emulator {
     fn update(&mut self);
     fn get_name(&self) -> &str;
     fn load(&mut self, game_data: Vec<u8>);
+    fn press_key(&mut self, key: u16);
+    fn release_key(&mut self, key: u16);
 }

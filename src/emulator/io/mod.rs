@@ -44,13 +44,21 @@ impl App {
 
     pub fn run(&mut self) {
         let mut events = Events::new(EventSettings::new());
-        while let Some(e) = events.next(&mut self.window) {
-            if let Some(r) = e.render_args() {
-                self.render(&r);
+        while let Some(event) = events.next(&mut self.window) {
+            if let Some(render) = event.render_args() {
+                self.render(&render);
             }
 
-            if let Some(u) = e.update_args() {
-                self.update(&u);
+            if let Some(Button::Keyboard(key)) = event.press_args() {
+                self.handle_key_press(&key);
+            }
+
+            if let Some(Button::Keyboard(key)) = event.release_args() {
+                self.handle_key_release(&key);
+            }
+
+            if let Some(update) = event.update_args() {
+                self.update(&update);
             }
         }
     }
@@ -79,6 +87,42 @@ impl App {
                 rectangle(draw_color, pixel, transform, gl);
             }
         });
+    }
+
+    fn handle_key_press(&mut self, key: &Key) {
+        println!("Key pressed: {:?}", key);
+        if let Some(key_value) = self.handle_key(key) {
+            self.emulator.press_key(key_value)
+        }
+    }
+
+    fn handle_key_release(&mut self, key: &Key) {
+        println!("Key released: {:?}", key);
+        if let Some(key_value) = self.handle_key(key) {
+            self.emulator.release_key(key_value)
+        }
+    }
+
+    fn handle_key(&self, key: &Key) -> Option<u16> {
+        match *key {
+            Key::Space => Option::Some(0x0),
+            Key::Y => Option::Some(0x1),
+            Key::X => Option::Some(0x2),
+            Key::C => Option::Some(0x3),
+            Key::A => Option::Some(0x4),
+            Key::S => Option::Some(0x5),
+            Key::D => Option::Some(0x6),
+            Key::Q => Option::Some(0x7),
+            Key::W => Option::Some(0x8),
+            Key::E => Option::Some(0x9),
+            Key::D1 => Option::Some(0xA),
+            Key::D2 => Option::Some(0xB),
+            Key::D3 => Option::Some(0xC),
+            Key::V => Option::Some(0xD),
+            Key::F => Option::Some(0xE),
+            Key::R => Option::Some(0xF),
+            _ => Option::None,
+        }
     }
 
     fn update(&mut self, args: &UpdateArgs) {

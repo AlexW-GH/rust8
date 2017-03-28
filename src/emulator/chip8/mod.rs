@@ -100,6 +100,14 @@ impl Emulator for Chip8 {
             i += 2;
         }
     }
+
+    fn press_key(&mut self, key: u16) {
+        self.input.press_key(key)
+    }
+
+    fn release_key(&mut self, key: u16) {
+        self.input.release_key(key)
+    }
 }
 
 impl Chip8 {
@@ -226,7 +234,7 @@ impl Chip8 {
         match optuple.2 {
             0x0 => match optuple.3 {
                 0x7 => self.registers.set_data_register_by_value(optuple.1, self.delay_timer.get_value()),
-                0xA => self.registers.set_data_register_by_value(optuple.1, self.input.get_key()),
+                0xA => self.registers.set_data_register_by_value(optuple.1, self.input.wait_for_key()),
                 _ => error!("Unknown opcode: {}", opcode)
             },
             0x1 => match optuple.3 {

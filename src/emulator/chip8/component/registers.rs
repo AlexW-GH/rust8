@@ -10,10 +10,6 @@ pub struct Registers {
 }
 
 impl Registers {
-    pub fn set_data_register_by_register(&mut self, dest: u8, src: u8) {
-        assert!(self.is_register_valid(src) && self.is_register_valid(dest));
-        self.data_registers[dest as usize] = self.data_registers[src as usize];
-    }
 
     pub fn set_data_register_by_value(&mut self, dest: u8, value: u8) {
         assert!(self.is_register_valid(dest));
@@ -23,6 +19,35 @@ impl Registers {
     pub fn get_data_register_value(&self, register: u8) -> u8 {
         assert!(self.is_register_valid(register));
         self.data_registers[register as usize]
+    }
+
+    pub fn set_data_register_by_register(&mut self, dest: u8, src: u8) {
+        assert!(self.is_register_valid(src) && self.is_register_valid(dest));
+        self.data_registers[dest as usize] = self.data_registers[src as usize];
+    }
+
+    pub fn reset_vf_to_zero(&mut self) {
+        self.data_registers[0xF] = 0;
+    }
+
+    pub fn is_equal_to_value(&self, register: u8, value: u8) -> bool {
+        assert!(self.is_register_valid(register));
+        self.data_registers[register as usize] == value
+    }
+
+    pub fn is_equal_to_register(&self, register1: u8, register2: u8) -> bool {
+        assert!(self.is_register_valid(register1) && self.is_register_valid(register2));
+        self.data_registers[register1 as usize] == self.data_registers[register2 as usize]
+    }
+
+    pub fn get_data_registers(&self, start: u8, end: u8) -> &[u8] {
+        self.data_registers[start as usize..(end + 1) as usize].into_iter().as_slice()
+    }
+
+    pub fn store_until_register(&mut self, register: u8, address: u16, memory: &Memory) {
+        for i in 0..register + 1 {
+            self.data_registers[i as usize] = memory.retrieve_value_from_address(address as u16 + i as u16);
+        }
     }
 
     pub fn add_data_register_with_register(&mut self, dest: u8, addend1: u8, addend2: u8) -> bool {
@@ -59,10 +84,6 @@ impl Registers {
         self.data_registers[register as usize] <<= 1;
     }
 
-    pub fn reset_vf_to_zero(&mut self) {
-        self.data_registers[0xF] = 0;
-    }
-
     pub fn get_address_register_value(&self) -> u16 {
         self.address_register
     }
@@ -81,37 +102,70 @@ impl Registers {
         self.address_register = memory::FONT_ADDRESS + (5 * char);
     }
 
-    pub fn get_data_registers(&self, start: u8, end: u8) -> &[u8] {
-        self.data_registers[start as usize..(end + 1) as usize].into_iter().as_slice()
-    }
-
-    pub fn store_until_register(&mut self, register: u8, address: u16, memory: &Memory) {
-        for i in 0..register + 1 {
-            self.data_registers[i as usize] = memory.retrieve_value_from_address(address as u16 + i as u16);
-        }
-    }
-
-    pub fn is_equal_to_value(&self, register: u8, value: u8) -> bool {
-        assert!(self.is_register_valid(register));
-        self.data_registers[register as usize] == value
-    }
-
-    pub fn is_equal_to_register(&self, register1: u8, register2: u8) -> bool {
-        assert!(self.is_register_valid(register1) && self.is_register_valid(register2));
-        self.data_registers[register1 as usize] == self.data_registers[register2 as usize]
-    }
-
     fn is_register_valid(&self, register: u8) -> bool {
         register < REGISTER_COUNT as u8
     }
 
 }
 
-/*
-0x6E05 VE = 05
-0x6500 V5 = 00
-0x6B06 Sprite Y Pos @ 06
-0x6A00 Sprite X Pos @ 00
-0xA30C Sprite @ 30C
-0xDAB1 draw
-*/
+
+#[cfg(test)]
+mod tests {
+    use super::Registers;
+
+    #[test]
+    fn set_get_value() {
+        let mut under_test: Registers = Default::default();
+        under_test.set_data_register_by_value(1, 100);
+        let result = under_test.get_data_register_value(1);
+        assert!(result == 100);
+    }
+
+    #[test]
+    fn set_by_register() {
+        let mut under_test: Registers = Default::default();
+        under_test.set_data_register_by_value(1, 100);
+        under_test.set_data_register_by_register(2, 1);
+        let result = under_test.get_data_register_value(2);
+        assert!(result == 100);
+    }
+
+    #[test]
+    fn reset_vf_to_zero() {
+        let mut under_test: Registers = Default::default();
+        under_test.set_data_register_by_value(15, 100);
+        under_test.reset_vf_to_zero();
+        let result = under_test.get_data_register_value(15);
+        assert!(result == 0);
+    }
+
+    #[test]
+    fn is_equal_to_value() {
+        let mut under_test: Registers = Default::default();
+        under_test.set_data_register_by_value(1, 100);
+        let result = under_test.is_equal_to_value(1, 100);
+        assert!(result);
+    }
+
+    #[test]
+    fn is_equal_to_register() {
+        let mut under_test: Registers = Default::default();
+        under_test.set_data_register_by_value(1, 100);
+        under_test.set_data_register_by_value(2, 100);
+        let result = under_test.is_equal_to_register(1, 2);
+        assert!(result);
+    }
+
+    #[test]
+    fn get_data_registers() {
+        let mut under_test: Registers = Default::default();
+        under_test.set_data_register_by_value(1, 100);
+        under_test.set_data_register_by_value(2, 150);
+        under_test.set_data_register_by_value(3, 200);
+        let result = under_test.get_data_registers(1, 3);
+        assert!(result[0] == 100);
+        assert!(result[1] == 150);
+        assert!(result[2] == 200);
+    }
+}
+

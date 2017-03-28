@@ -13,7 +13,7 @@ use log4rs::config::{Appender, Config, Root};
 
 use emulator::Emulator;
 use self::emulator::chip8::Chip8;
-use self::emulator::window::App;
+use self::emulator::io::App;
 use self::emulator::romloader;
 
 fn main() {
