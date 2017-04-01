@@ -1,4 +1,4 @@
-const MEM_SIZE: usize = 4096;
+pub const MEM_SIZE: usize = 4096;
 pub const FONT_ADDRESS: u16 = 0x100;
 pub const PROGRAM_ADDRESS: u16 = 0x200;
 
@@ -13,6 +13,14 @@ impl Default for Memory {
 }
 
 impl Memory {
+    pub fn new(address: usize, init_vec: Vec<u8>) -> Memory {
+        let mut init_memory: [u8; MEM_SIZE] = [0; MEM_SIZE];
+        for (i, value) in init_vec.into_iter().enumerate() {
+            init_memory[i + address] = value;
+        }
+        Memory { memory: init_memory }
+    }
+
     pub fn retrieve_value_from_address(&self, address: u16) -> u8 {
         self.memory[address as usize]
     }
