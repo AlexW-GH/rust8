@@ -90,16 +90,14 @@ impl App {
     }
 
     fn handle_key_press(&mut self, key: &Key) {
-        println!("Key pressed: {:?}", key);
         if let Some(key_value) = self.handle_key(key) {
-            self.emulator.press_key(key_value)
+            self.emulator.press_key(0b1 << key_value)
         }
     }
 
     fn handle_key_release(&mut self, key: &Key) {
-        println!("Key released: {:?}", key);
         if let Some(key_value) = self.handle_key(key) {
-            self.emulator.release_key(key_value)
+            self.emulator.release_key(0b1 << key_value)
         }
     }
 

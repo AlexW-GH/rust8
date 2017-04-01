@@ -93,12 +93,6 @@ impl Emulator for Chip8 {
     fn load(&mut self, game_data: Vec<u8>) {
         self.memory.store_all_to_address(game_data.as_slice(), memory::PROGRAM_ADDRESS);
         self.memory.store_all_to_address(&FONTSET, memory::FONT_ADDRESS);
-        let mut i = 0;
-        debug!("Gamedata:");
-        while i < game_data.len() {
-            debug!("0x{:X}: 0x{:02X}{:02X}", i + memory::PROGRAM_ADDRESS as usize, game_data[i], game_data[i + 1]);
-            i += 2;
-        }
     }
 
     fn press_key(&mut self, key: u16) {
@@ -116,7 +110,6 @@ impl Chip8 {
     }
 
     fn execute_op(&mut self, opcode: Opcode) {
-        debug!("pc: 0x{:X} -> opcode: {}", self.pc, opcode);
         let optuple = opcode.as_tuple();
         match optuple.0 {
             0x0 => self.handle_0x0_operations(opcode),
