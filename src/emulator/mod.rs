@@ -10,4 +10,5 @@ pub trait Emulator {
     fn load(&mut self, game_data: Vec<u8>);
     fn press_key(&mut self, key: u16);
     fn release_key(&mut self, key: u16);
+    fn needs_redraw(&mut self) -> bool;
 }
