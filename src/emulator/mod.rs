@@ -1,6 +1,4 @@
-pub mod io;
 pub mod chip8;
-pub mod romloader;
 
 pub trait Emulator {
     fn retrieve_screen_pixels(&self) -> &[bool];

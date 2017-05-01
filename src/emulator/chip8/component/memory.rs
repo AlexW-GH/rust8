@@ -27,7 +27,7 @@ impl Memory {
 
     pub fn retrieve_range(&self, mem_start: u16, size: u8) -> &[u8] {
         if ((mem_start + size as u16) as usize) < MEM_SIZE {
-            return self.memory[mem_start as usize..(mem_start + (size as u16)) as usize].into_iter().as_slice()
+            self.memory[mem_start as usize..(mem_start + (size as u16)) as usize].into_iter().as_slice()
         } else { panic!("Memory Overflow when retrieving memory range") }
 
     }

@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["alex <wendt.alexander@googlemail.com>"]
 
 [dependencies]
+
 log = "*"
 log4rs = "*"
 

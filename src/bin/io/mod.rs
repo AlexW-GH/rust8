@@ -1,3 +1,5 @@
+pub mod romloader;
+
 extern crate piston;
 extern crate graphics;
 extern crate glutin_window;
@@ -9,7 +11,7 @@ use self::piston::input::*;
 use self::glutin_window::GlutinWindow as Window;
 use self::opengl_graphics::{GlGraphics, OpenGL};
 
-use emulator::Emulator;
+use rust8::emulator::Emulator;
 
 const UPDATE_LIMIT: f64 = 1.0 / 60.0;
 

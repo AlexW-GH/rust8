@@ -1,9 +1,8 @@
-mod emulator;
+mod io;
 
-#[macro_use]
 extern crate log;
 extern crate log4rs;
-extern crate rand;
+extern crate rust8;
 
 use log::LogLevelFilter;
 use log4rs::append::console::ConsoleAppender;
@@ -11,14 +10,13 @@ use log4rs::append::file::FileAppender;
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::config::{Appender, Config, Root};
 
-use emulator::Emulator;
-use self::emulator::chip8::Chip8;
-use self::emulator::io::App;
-use self::emulator::romloader;
+use rust8::emulator::Emulator;
+use io::App;
+use io::romloader;
 
 fn main() {
     configure_logger("config/log4rs.yml".to_string());
-    let mut emulator: Box<Chip8> = Box::new(Chip8::new());
+    let mut emulator: Box<Emulator> = rust8::create_chip8();
     let game = romloader::load_rom("games/game.c8");
     emulator.load(game);
     let mut app: App = App::new(emulator);
