@@ -237,7 +237,7 @@ impl Chip8 {
         match opnibbles.2 {
             0x0 => match opnibbles.3 {
                 0x7 => self.registers.set_data_register_by_value(opnibbles.1, self.delay_timer.get_value()),
-                0xA => self.registers.set_data_register_by_value(opnibbles.1, self.input.wait_for_key()),
+                0xA => self.wait_for_key_and_set_register_to_key_value(opnibbles.1),
                 _ => error!("Unknown opcode: {}", opcode)
             },
             0x1 => match opnibbles.3 {
@@ -313,6 +313,16 @@ impl Chip8 {
         let pixel_flipped = self.screen.draw(self.registers.get_data_register_value(pos_x), self.registers.get_data_register_value(pos_y), sprite);
         self.registers.set_data_register_by_value(0xF, if pixel_flipped { 1 } else { 0 });
         self.need_redraw = true;
+    }
+
+    fn wait_for_key_and_set_register_to_key_value(&mut self, register: u8) {
+        {
+            if let Some(key) = self.input.get_any_pressed_key() {
+                self.registers.set_data_register_by_value(register, key)
+            } else {
+                self.pc -= 2
+            }
+        }
     }
 }
 

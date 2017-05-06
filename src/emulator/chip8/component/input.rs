@@ -8,17 +8,21 @@ impl Input {
         (self.pressed_keys & (0b1 << key)) > 0
     }
 
-    pub fn wait_for_key(&self) -> u8 {
-        error!("get_key not yet implemented!");
-        0 //TODO: implement me!
-    }
-
     pub fn press_key(&mut self, key: u16) {
         self.pressed_keys |= key
     }
 
     pub fn release_key(&mut self, key: u16) {
         self.pressed_keys &= !key
+    }
+
+    pub fn get_any_pressed_key(&self) -> Option<u8> {
+        for i in 0..16 {
+            if (self.pressed_keys & (1 << i)) > 0 {
+                return Some(i)
+            }
+        }
+        None
     }
 }
 
