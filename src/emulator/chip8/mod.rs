@@ -12,7 +12,7 @@ use self::component::registers::Registers;
 use self::component::memory;
 use self::component::memory::Memory;
 use self::component::opcode::Opcode;
-use self::component::opcode::Command::*;
+use self::component::opcode::ASM::*;
 use emulator::Emulator;
 
 const FONTSET: [u8; 80] = [
@@ -118,6 +118,7 @@ impl Chip8 {
     }
 
     fn execute_op(&mut self, opcode: &mut Opcode) {
+        debug!("Executing {}", opcode);
         match opcode.as_asm() {
             CLS => {
                 self.screen.clear();
@@ -166,8 +167,8 @@ impl Chip8 {
                 let is_equal = self.registers.is_equal_to_register(register1, register2);
                 self.skip_next_op_if(!is_equal);
             },
-            LDI(value) => self.registers.set_address_register_value(value),
-            RJMP(value) => self.jump_to_v0_plus_value(value),
+            LDI(address) => self.registers.set_address_register_value(address),
+            RJMP(address) => self.jump_to_v0_plus_value(address),
             RND(register, value) => self.set_data_register_to_random(register, value),
             DRW(register_x, register_y, register_h) => self.draw_sprite_and_set_vf_if_pixel_flipped_to_zero(register_x, register_y, register_h),
             SKPK(register) => {
@@ -190,7 +191,10 @@ impl Chip8 {
                 let address_value = self.registers.get_address_register_value();
                 self.registers.store_until_register(register, address_value, &self.memory)
             }
-            ERR => error!("Unknown opcode: {}", opcode)
+            ERR => {
+                error!("Unknown opcode: {}", opcode);
+                panic!()
+            }
         }
     }
 
@@ -211,7 +215,7 @@ impl Chip8 {
 
     fn return_from_subroutine(&mut self) {
         self.pc = self.stack.pop().unwrap();
-        debug!("Returning to {:X} from Subroutine", self.pc);
+        debug!("Returning to 0x{:X} from Subroutine", self.pc);
     }
 
     fn jump_to_address(&mut self, to_address: u16) {
@@ -219,7 +223,7 @@ impl Chip8 {
     }
 
     fn call_subroutine(&mut self, to_address: u16) {
-        debug!("Initiate subroutine at {:X}, jumping from {:X}", to_address, self.pc);
+        debug!("Initiate subroutine at 0x{:X}, jumping from 0x{:X}", to_address, self.pc);
         self.stack.push(self.pc);
         self.pc = to_address;
     }
