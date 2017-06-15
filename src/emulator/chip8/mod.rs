@@ -118,78 +118,77 @@ impl Chip8 {
     }
 
     fn execute_op(&mut self, opcode: &mut Opcode) {
-        let opnibbles = opcode.as_nibbles();
         match opcode.as_asm() {
             CLS => {
                 self.screen.clear();
                 self.need_redraw = true;
             },
             RET => self.return_from_subroutine(),
-            SYS => error!("RCA 1802 subroutine calls are not implemented - opcode {}", opcode),
-            JMP => self.jump_to_address(opcode.as_masked(0x0FFF)),
-            CALL => self.call_subroutine(opcode.as_masked(0x0FFF)),
-            SE => self.skip_if_register_equals_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            SNE => self.skip_if_register_not_equals_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            CPSE => {
-                let is_equal = self.registers.is_equal_to_register(opnibbles.1, opnibbles.2);
+            SYS(address) => error!("RCA 1802 subroutine calls are not implemented - opcode {}, Soubroutine called at 0x{:X}", opcode, address),
+            JMP(address) => self.jump_to_address(address),
+            CALL(address) => self.call_subroutine(address),
+            SE(register, value) => self.skip_if_register_equals_value(register, value),
+            SNE(register, value) => self.skip_if_register_not_equals_value(register, value),
+            CPSE(register1, register2) => {
+                let is_equal = self.registers.is_equal_to_register(register1, register2);
                 self.skip_next_op_if(is_equal);
             },
-            LD => self.registers.set_data_register_by_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            ADDI => self.registers.add_data_register_with_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            CP => self.registers.set_data_register_by_register(opnibbles.1, opnibbles.2),
-            OR => {
-                self.registers.set_data_register_by_register(opnibbles.1, opnibbles.1 | opnibbles.2);
+            LD(register, value) => self.registers.set_data_register_by_value(register, value),
+            ADDI(register, value) => self.registers.add_data_register_with_value(register, value),
+            CP(register1, register2) => self.registers.set_data_register_by_register(register1, register2),
+            OR(register1, register2) => {
+                self.registers.set_data_register_by_register(register1, register1 | register2);
                 self.registers.reset_vf_to_zero();
             },
-            AND => {
-                self.registers.set_data_register_by_register(opnibbles.1, opnibbles.1 & opnibbles.2);
+            AND(register1, register2) => {
+                self.registers.set_data_register_by_register(register1, register1 & register2);
                 self.registers.reset_vf_to_zero();
             },
-            XOR => {
-                self.registers.set_data_register_by_register(opnibbles.1, opnibbles.1 ^ opnibbles.2);
+            XOR(register1, register2) => {
+                self.registers.set_data_register_by_register(register1, register1 ^ register2);
                 self.registers.reset_vf_to_zero();
             },
-            ADD => {
-                let overflow = self.registers.add_data_register_with_register(opnibbles.1, opnibbles.1, opnibbles.2);
+            ADD(register1, register2) => {
+                let overflow = self.registers.add_data_register_with_register(register1, register1, register2);
                 self.registers.set_data_register_by_value(0xF, if overflow { 1 } else { 0 });
             },
-            SUB => {
-                let overflow = self.registers.sub_data_register_with_register(opnibbles.1, opnibbles.1, opnibbles.2);
+            SUB(register1, register2) => {
+                let overflow = self.registers.sub_data_register_with_register(register1, register1, register2);
                 self.registers.set_data_register_by_value(0xF, if overflow { 0 } else { 1 });
             },
-            SHR => self.registers.shift_right_and_set_vf_to_lsb(opnibbles.1),
-            SUBN => {
-                let overflow = self.registers.sub_data_register_with_register(opnibbles.1, opnibbles.2, opnibbles.1);
+            SHR(register) => self.registers.shift_right_and_set_vf_to_lsb(register),
+            SUBN(register1, register2) => {
+                let overflow = self.registers.sub_data_register_with_register(register1, register2, register1);
                 self.registers.set_data_register_by_value(0xF, if overflow { 0 } else { 1 });
             },
-            SHL => self.registers.shift_left_and_set_vf_to_msb(opnibbles.1),
-            SNER => {
-                let is_equal = self.registers.is_equal_to_register(opnibbles.1, opnibbles.2);
+            SHL(register) => self.registers.shift_left_and_set_vf_to_msb(register),
+            SNER(register1, register2) => {
+                let is_equal = self.registers.is_equal_to_register(register1, register2);
                 self.skip_next_op_if(!is_equal);
             },
-            LDI => self.registers.set_address_register_value(opcode.as_masked(0x0FFF)),
-            JMPI => self.jump_to_v0_plus_value(opcode.as_masked(0x0FFF)),
-            RND => self.set_data_register_to_random(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            DRW => self.draw_sprite_and_set_vf_if_pixel_flipped_to_zero(opnibbles.1, opnibbles.2, opnibbles.3),
-            SKPK => {
-                let button_pressed = self.input.is_pressed(self.registers.get_data_register_value(opnibbles.1));
+            LDI(value) => self.registers.set_address_register_value(value),
+            RJMP(value) => self.jump_to_v0_plus_value(value),
+            RND(register, value) => self.set_data_register_to_random(register, value),
+            DRW(register_x, register_y, register_h) => self.draw_sprite_and_set_vf_if_pixel_flipped_to_zero(register_x, register_y, register_h),
+            SKPK(register) => {
+                let button_pressed = self.input.is_pressed(self.registers.get_data_register_value(register));
                 self.skip_next_op_if(button_pressed)
             },
-            SKPNK => {
-                let button_pressed = self.input.is_pressed(self.registers.get_data_register_value(opnibbles.1));
+            SKPNK(register) => {
+                let button_pressed = self.input.is_pressed(self.registers.get_data_register_value(register));
                 self.skip_next_op_if(!button_pressed)
             },
-            LDDT => self.registers.set_data_register_by_value(opnibbles.1, self.delay_timer.get_value()),
-            WLDK => self.wait_for_key_and_set_register_to_key_value(opnibbles.1),
-            SDTR => self.delay_timer.set_value(self.registers.get_data_register_value(opnibbles.1)),
-            SSTR => self.sound_timer.set_value(self.registers.get_data_register_value(opnibbles.1)),
-            ADDIR => self.registers.add_address_register_with_register(opnibbles.1),
-            LDSPR => self.registers.set_address_register_to_sprite_from_register(opnibbles.1),
-            BCD => self.memory.store_binary_representation_of_value(self.registers.get_data_register_value(opnibbles.1), self.registers.get_address_register_value()),
-            STOR => self.memory.store_from_address_on(self.registers.get_data_registers(0x0, opnibbles.1), self.registers.get_address_register_value()),
-            READ => {
+            LDDT(register) => self.registers.set_data_register_by_value(register, self.delay_timer.get_value()),
+            WLDK(register) => self.wait_for_key_and_set_register_to_key_value(register),
+            SDTR(register) => self.delay_timer.set_value(self.registers.get_data_register_value(register)),
+            SSTR(register) => self.sound_timer.set_value(self.registers.get_data_register_value(register)),
+            ADDIR(register) => self.registers.add_address_register_with_register(register),
+            LDSPR(register) => self.registers.set_address_register_to_sprite_from_register(register),
+            BCD(register) => self.memory.store_binary_representation_of_value(self.registers.get_data_register_value(register), self.registers.get_address_register_value()),
+            STOR(register) => self.memory.store_from_address_on(self.registers.get_data_registers(0x0, register), self.registers.get_address_register_value()),
+            READ(register) => {
                 let address_value = self.registers.get_address_register_value();
-                self.registers.store_until_register(opnibbles.1, address_value, &self.memory)
+                self.registers.store_until_register(register, address_value, &self.memory)
             }
             ERR => error!("Unknown opcode: {}", opcode)
         }

@@ -91,7 +91,7 @@ mod tests {
     fn retrieve_range_overflow() {
         let under_test = create_test_memory(super::MEM_SIZE - 17);
 
-        let result = under_test.retrieve_range((super::MEM_SIZE - 4) as u16, 4);
+        let _ = under_test.retrieve_range((super::MEM_SIZE - 4) as u16, 4);
     }
 
     #[test]
