@@ -13,6 +13,7 @@ impl Default for Memory {
 }
 
 impl Memory {
+    #[allow(dead_code)]
     pub fn new(address: usize, init_vec: Vec<u8>) -> Memory {
         let mut init_memory: [u8; MEM_SIZE] = [0; MEM_SIZE];
         for (i, value) in init_vec.into_iter().enumerate() {

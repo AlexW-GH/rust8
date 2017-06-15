@@ -12,6 +12,7 @@ use self::component::registers::Registers;
 use self::component::memory;
 use self::component::memory::Memory;
 use self::component::opcode::Opcode;
+use self::component::opcode::Command::*;
 use emulator::Emulator;
 
 const FONTSET: [u8; 80] = [
@@ -83,9 +84,9 @@ impl Emulator for Chip8 {
     fn update(&mut self) {
         self.delay_timer.tick_down();
         self.sound_timer.tick_down();
-        let opcode = retrieve_op(&self.memory, self.pc);
+        let mut opcode = retrieve_op(&self.memory, self.pc);
         self.pc += 2;
-        self.execute_op(&opcode);
+        self.execute_op(&mut opcode);
     }
 
     fn get_name(&self) -> &str {
@@ -116,156 +117,81 @@ impl Chip8 {
         Chip8 { ..Default::default() }
     }
 
-    fn execute_op(&mut self, opcode: &Opcode) {
+    fn execute_op(&mut self, opcode: &mut Opcode) {
         let opnibbles = opcode.as_nibbles();
-        match opnibbles.0 {
-            0x0 => self.handle_0x0_operations(opcode),
-            0x1 => self.jump_to_address(opcode.as_masked(0x0FFF)),
-            0x2 => self.call_subroutine(opcode.as_masked(0x0FFF)),
-            0x3 => self.skip_if_register_equals_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            0x4 => self.skip_if_register_not_equals_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            0x5 => self.handle_0x5_operations(opcode),
-            0x6 => self.registers.set_data_register_by_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            0x7 => self.registers.add_data_register_with_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            0x8 => self.handle_0x8_operations(opcode),
-            0x9 => self.handle_0x9_operations(opcode),
-            0xA => self.registers.set_address_register_value(opcode.as_masked(0x0FFF)),
-            0xB => self.jump_to_v0_plus_value(opcode.as_masked(0x0FFF)),
-            0xC => self.set_data_register_to_random(opnibbles.1, opcode.as_masked(0x00FF) as u8),
-            0xD => self.draw_sprite_and_set_vf_if_pixel_flipped_to_zero(opnibbles.1, opnibbles.2, opnibbles.3),
-            0xE => self.handle_0xe_operations(opcode),
-            0xF => self.handle_0xf_operations(opcode),
-            _ => { error!("Unknown opcode: {}", opcode) }
-        }
-    }
-
-    fn handle_0x0_operations(&mut self, opcode: &Opcode) {
-        let opnibbles = opcode.as_nibbles();
-        if opnibbles.1 == 0x0 && opnibbles.2 == 0xE {
-            match opnibbles.3 {
-                0x0 => {
-                    self.screen.clear();
-                    self.need_redraw = true;
-                },
-                0xE => self.return_from_subroutine(),
-                _ => error!("Unknown opcode: {}", opcode),
-            }
-        } else {
-            error!("RCA 1802 subroutine calls are not implemented - opcode {}", opcode);
-        }
-    }
-
-    fn handle_0x5_operations(&mut self, opcode: &Opcode) {
-        let opnibbles = opcode.as_nibbles();
-        match opnibbles.3 {
-            0x0 => {
+        match opcode.as_asm() {
+            CLS => {
+                self.screen.clear();
+                self.need_redraw = true;
+            },
+            RET => self.return_from_subroutine(),
+            SYS => error!("RCA 1802 subroutine calls are not implemented - opcode {}", opcode),
+            JMP => self.jump_to_address(opcode.as_masked(0x0FFF)),
+            CALL => self.call_subroutine(opcode.as_masked(0x0FFF)),
+            SE => self.skip_if_register_equals_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
+            SNE => self.skip_if_register_not_equals_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
+            CPSE => {
                 let is_equal = self.registers.is_equal_to_register(opnibbles.1, opnibbles.2);
                 self.skip_next_op_if(is_equal);
             },
-            _ => error!("Unknown opcode: {}", opcode)
-        }
-    }
-
-    fn handle_0x8_operations(&mut self, opcode: &Opcode) {
-        let opnibbles = opcode.as_nibbles();
-        match opnibbles.3 {
-            0x0 => self.registers.set_data_register_by_register(opnibbles.1, opnibbles.2),
-            0x1 => {
+            LD => self.registers.set_data_register_by_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
+            ADDI => self.registers.add_data_register_with_value(opnibbles.1, opcode.as_masked(0x00FF) as u8),
+            CP => self.registers.set_data_register_by_register(opnibbles.1, opnibbles.2),
+            OR => {
                 self.registers.set_data_register_by_register(opnibbles.1, opnibbles.1 | opnibbles.2);
                 self.registers.reset_vf_to_zero();
             },
-            0x2 => {
+            AND => {
                 self.registers.set_data_register_by_register(opnibbles.1, opnibbles.1 & opnibbles.2);
                 self.registers.reset_vf_to_zero();
             },
-            0x3 => {
+            XOR => {
                 self.registers.set_data_register_by_register(opnibbles.1, opnibbles.1 ^ opnibbles.2);
                 self.registers.reset_vf_to_zero();
             },
-            0x4 => {
+            ADD => {
                 let overflow = self.registers.add_data_register_with_register(opnibbles.1, opnibbles.1, opnibbles.2);
                 self.registers.set_data_register_by_value(0xF, if overflow { 1 } else { 0 });
             },
-            0x5 => {
+            SUB => {
                 let overflow = self.registers.sub_data_register_with_register(opnibbles.1, opnibbles.1, opnibbles.2);
                 self.registers.set_data_register_by_value(0xF, if overflow { 0 } else { 1 });
             },
-            0x6 => self.registers.shift_right_and_set_vf_to_lsb(opnibbles.1),
-            0x7 => {
+            SHR => self.registers.shift_right_and_set_vf_to_lsb(opnibbles.1),
+            SUBN => {
                 let overflow = self.registers.sub_data_register_with_register(opnibbles.1, opnibbles.2, opnibbles.1);
                 self.registers.set_data_register_by_value(0xF, if overflow { 0 } else { 1 });
             },
-            0xE => self.registers.shift_left_and_set_vf_to_msb(opnibbles.1),
-            _ => { error!("Unknown opcode: {}", opcode) }
-        }
-    }
-
-    fn handle_0x9_operations(&mut self, opcode: &Opcode) {
-        let opnibbles = opcode.as_nibbles();
-        match opnibbles.3 {
-            0x0 => {
+            SHL => self.registers.shift_left_and_set_vf_to_msb(opnibbles.1),
+            SNER => {
                 let is_equal = self.registers.is_equal_to_register(opnibbles.1, opnibbles.2);
                 self.skip_next_op_if(!is_equal);
             },
-            _ => error!("Unknown opcode: {}", opcode)
-        }
-    }
-
-    fn handle_0xe_operations(&mut self, opcode: &Opcode) {
-        let opnibbles = opcode.as_nibbles();
-        match opnibbles.2 {
-            0x9 => match opnibbles.3 {
-                0xE => {
-                    let button_pressed = self.input.is_pressed(self.registers.get_data_register_value(opnibbles.1));
-                    self.skip_next_op_if(button_pressed)
-                },
-                _ => error!("Unknown opcode: {}", opcode)
+            LDI => self.registers.set_address_register_value(opcode.as_masked(0x0FFF)),
+            JMPI => self.jump_to_v0_plus_value(opcode.as_masked(0x0FFF)),
+            RND => self.set_data_register_to_random(opnibbles.1, opcode.as_masked(0x00FF) as u8),
+            DRW => self.draw_sprite_and_set_vf_if_pixel_flipped_to_zero(opnibbles.1, opnibbles.2, opnibbles.3),
+            SKPK => {
+                let button_pressed = self.input.is_pressed(self.registers.get_data_register_value(opnibbles.1));
+                self.skip_next_op_if(button_pressed)
             },
-            0xA => match opnibbles.3 {
-                0x1 => {
-                    let button_pressed = self.input.is_pressed(self.registers.get_data_register_value(opnibbles.1));
-                    self.skip_next_op_if(!button_pressed)
-                },
-                _ => error!("Unknown opcode: {}", opcode)
+            SKPNK => {
+                let button_pressed = self.input.is_pressed(self.registers.get_data_register_value(opnibbles.1));
+                self.skip_next_op_if(!button_pressed)
             },
-            _ => error!("Unknown opcode: {}", opcode)
-        }
-    }
-
-    fn handle_0xf_operations(&mut self, opcode: &Opcode) {
-        let opnibbles = opcode.as_nibbles();
-        match opnibbles.2 {
-            0x0 => match opnibbles.3 {
-                0x7 => self.registers.set_data_register_by_value(opnibbles.1, self.delay_timer.get_value()),
-                0xA => self.wait_for_key_and_set_register_to_key_value(opnibbles.1),
-                _ => error!("Unknown opcode: {}", opcode)
-            },
-            0x1 => match opnibbles.3 {
-                0x5 => self.delay_timer.set_value(self.registers.get_data_register_value(opnibbles.1)),
-                0x8 => self.sound_timer.set_value(self.registers.get_data_register_value(opnibbles.1)),
-                0xE => self.registers.add_address_register_with_register(opnibbles.1),
-                _ => error!("Unknown opcode: {}", opcode)
-            },
-            0x2 => match opnibbles.3 {
-                0x9 => self.registers.set_address_register_to_sprite_from_register(opnibbles.1),
-                _ => error!("Unknown opcode: {}", opcode)
-            },
-            0x3 => match opnibbles.3 {
-                0x3 => self.memory.store_binary_representation_of_value(self.registers.get_data_register_value(opnibbles.1), self.registers.get_address_register_value()),
-                _ => error!("Unknown opcode: {}", opcode)
-            },
-            0x5 => match opnibbles.3 {
-                0x5 => self.memory.store_from_address_on(self.registers.get_data_registers(0x0, opnibbles.1), self.registers.get_address_register_value()),
-                _ => error!("Unknown opcode: {}", opcode)
-            },
-            0x6 => match opnibbles.3 {
-                0x5 => {
-                    let address_value = self.registers.get_address_register_value();
-                    self.registers.store_until_register(opnibbles.1, address_value, &self.memory)
-                }
-                _ => error!("Unknown opcode: {}", opcode)
-            },
-            _ => error!("Unknown opcode: {}", opcode)
+            LDDT => self.registers.set_data_register_by_value(opnibbles.1, self.delay_timer.get_value()),
+            WLDK => self.wait_for_key_and_set_register_to_key_value(opnibbles.1),
+            SDTR => self.delay_timer.set_value(self.registers.get_data_register_value(opnibbles.1)),
+            SSTR => self.sound_timer.set_value(self.registers.get_data_register_value(opnibbles.1)),
+            ADDIR => self.registers.add_address_register_with_register(opnibbles.1),
+            LDSPR => self.registers.set_address_register_to_sprite_from_register(opnibbles.1),
+            BCD => self.memory.store_binary_representation_of_value(self.registers.get_data_register_value(opnibbles.1), self.registers.get_address_register_value()),
+            STOR => self.memory.store_from_address_on(self.registers.get_data_registers(0x0, opnibbles.1), self.registers.get_address_register_value()),
+            READ => {
+                let address_value = self.registers.get_address_register_value();
+                self.registers.store_until_register(opnibbles.1, address_value, &self.memory)
+            }
+            ERR => error!("Unknown opcode: {}", opcode)
         }
     }
 
