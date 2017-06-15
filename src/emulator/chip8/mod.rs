@@ -46,6 +46,7 @@ pub struct Chip8 {
     title: String,
     rng: StdRng,
     need_redraw: bool,
+    should_beep: bool,
 }
 
 fn retrieve_op(memory: &Memory, address: u16) -> Opcode {
@@ -68,6 +69,7 @@ impl Default for Chip8 {
             title: String::from("Chip 8"),
             rng: StdRng::new().unwrap(),
             need_redraw: false,
+            should_beep: false,
         }
     }
 }
@@ -82,6 +84,7 @@ impl Emulator for Chip8 {
     }
 
     fn update(&mut self) {
+        if self.sound_timer.get_value() == 1 { self.beep() }
         self.delay_timer.tick_down();
         self.sound_timer.tick_down();
         let mut opcode = retrieve_op(&self.memory, self.pc);
@@ -109,6 +112,12 @@ impl Emulator for Chip8 {
         let redraw = self.need_redraw;
         self.need_redraw = false;
         redraw
+    }
+
+    fn should_beep(&mut self) -> bool {
+        let beep = self.should_beep;
+        self.should_beep = false;
+        beep
     }
 }
 
@@ -196,6 +205,10 @@ impl Chip8 {
                 panic!()
             }
         }
+    }
+
+    fn beep(&mut self) {
+        self.should_beep = true;
     }
 
     fn jump_to_v0_plus_value(&mut self, value: u16) {

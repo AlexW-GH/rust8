@@ -9,4 +9,5 @@ pub trait Emulator {
     fn press_key(&mut self, key: u16);
     fn release_key(&mut self, key: u16);
     fn needs_redraw(&mut self) -> bool;
+    fn should_beep(&mut self) -> bool;
 }

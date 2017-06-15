@@ -129,6 +129,9 @@ impl App {
         self.update_time += args.dt;
         if self.update_time > UPDATE_LIMIT {
             self.emulator.update();
+            if self.emulator.should_beep() {
+                // todo: BEEP!
+            }
             self.update_time -= UPDATE_LIMIT;
         }
 
